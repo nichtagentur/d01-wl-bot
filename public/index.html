@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wiener Linien Bot</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--card:#f2f2f2;--me:#e3000f;--mefg:#fff;--line:#ddd}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--card:#262626;--line:#333}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;display:flex;flex-direction:column;height:100dvh}
+header{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}header span{color:var(--me)}
+#log{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-width:720px;width:100%;margin:0 auto}
+.m{padding:10px 14px;border-radius:14px;max-width:85%;white-space:pre-wrap;background:var(--card)}
+.m.me{align-self:flex-end;background:var(--me);color:var(--mefg)}
+#hints{display:flex;gap:8px;flex-wrap:wrap;max-width:720px;margin:0 auto;padding:0 16px}
+#hints button{border:1px solid var(--line);background:none;color:var(--fg);border-radius:99px;padding:6px 12px;cursor:pointer}
+form{display:flex;gap:8px;padding:12px 16px;max-width:720px;width:100%;margin:0 auto}
+input{flex:1;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+form button{padding:12px 18px;border:0;border-radius:10px;background:var(--me);color:#fff;font:inherit;cursor:pointer}
+</style></head><body>
+<header><span>U</span> Wiener Linien Bot</header>
+<div id="log"><div class="m">Ask me about live departures or disruptions in Vienna.</div></div>
+<div id="hints"></div>
+<form id="f"><input id="q" placeholder="When does the next U1 leave Stephansplatz?" autocomplete="off" maxlength="500"><button>Send</button></form>
+<script>
+const log=document.getElementById('log'),q=document.getElementById('q'),hist=[];
+function add(t,me){const d=document.createElement('div');d.className='m'+(me?' me':'');d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+async function ask(text){
+  add(text,true);const w=add('...');
+  try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:hist})});
+    const j=await r.json();w.textContent=j.answer||j.error||'Error';
+    if(j.answer){hist.push({role:'user',content:text},{role:'assistant',content:j.answer})}}
+  catch(e){w.textContent='Network error.'}
+}
+document.getElementById('f').onsubmit=e=>{e.preventDefault();const t=q.value.trim();if(t){q.value='';ask(t)}};
+['When does the next U1 leave Stephansplatz?','Are there disruptions on the U6?','Next U3 at Westbahnhof?'].forEach(t=>{
+  const b=document.createElement('button');b.textContent=t;b.onclick=()=>ask(t);document.getElementById('hints').appendChild(b)});
+</script></body></html>
